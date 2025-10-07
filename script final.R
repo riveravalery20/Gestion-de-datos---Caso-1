@@ -27,19 +27,28 @@ BaseFinal <- costos %>%
     
   ) %>% 
   select(VENTAS_MES_ANTERIOR, GASTOS_MES, CONSUMO_INTERMEDIO,
-         VALOR_AGREGADO, INV_ACTIVOS, REGION)
-
+         VALOR_AGREGADO, INV_ACTIVOS, REGION, COD_DEPTO) %>% 
+  mutate(VENTAS_MES_ANTERIOR=as.numeric(VENTAS_MES_ANTERIOR),
+         GASTOS_MES=as.numeric(GASTOS_MES), CONSUMO_INTERMEDIO= as.numeric(CONSUMO_INTERMEDIO),
+         VALOR_AGREGADO=as.numeric(VALOR_AGREGADO), INV_ACTIVOS=as.numeric(INV_ACTIVOS))%>%
+  filter(VENTAS_MES_ANTERIOR>0,VALOR_AGREGADO>0, INV_ACTIVOS>0, GASTOS_MES>0)
+                                                                                                              )))
+View(BaseFinal)
 # Análisis y modelo
 summary(BaseFinal$INV_ACTIVOS)
 summary(BaseFinal)
 
 Modelo <- lm(
-  VENTAS_MES_ANTERIOR ~ GASTOS_MES + CONSUMO_INTERMEDIO +
-    VALOR_AGREGADO + INV_ACTIVOS + REGION,
+  VENTAS_MES_ANTERIOR ~ GASTOS_MES +
+    VALOR_AGREGADO + INV_ACTIVOS
+  + factor(REGION),
   data = BaseFinal
 )
 summary(Modelo)
 
 # Gráficos exploratorios
 ggplot(BaseFinal, aes(x = VENTAS_MES_ANTERIOR, y = GASTOS_MES)) + geom_point()
-ggplot(BaseFinal, aes(x = VENTAS_MES_ANTERIOR, y = CONSUMO_INTERMEDIO)) + geom_point()
+ggplot(BaseFinal, aes(x = INV_ACTIVOS, y = VENTAS_MES_ANTERIOR)) + geom_point()
+
+plot(Modelo, 1)
+
