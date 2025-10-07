@@ -27,11 +27,12 @@ BaseFinal <- costos %>%
     INV_ACTIVOS = rowSums(select(., starts_with("P3017_")), na.rm = TRUE)
   ) %>% 
   select(VENTAS_MES_ANTERIOR, GASTOS_MES, P3017_A,
-         VALOR_AGREGADO, INV_ACTIVOS, REGION, COD_DEPTO) %>% 
+         VALOR_AGREGADO, INV_ACTIVOS, REGION) %>% 
   mutate(VENTAS_MES_ANTERIOR=as.numeric(VENTAS_MES_ANTERIOR),
          GASTOS_MES=as.numeric(GASTOS_MES), P3017_A=as.numeric(P3017_A),
          VALOR_AGREGADO=as.numeric(VALOR_AGREGADO), INV_ACTIVOS=as.numeric(INV_ACTIVOS)) %>%
-  filter(VENTAS_MES_ANTERIOR>0,VALOR_AGREGADO>0, INV_ACTIVOS>0, GASTOS_MES>0, P3017_A>0)
+  filter(VENTAS_MES_ANTERIOR>0,VALOR_AGREGADO>0, INV_ACTIVOS>0, GASTOS_MES>0, P3017_A>0) %>% 
+  rename(ARRENDAMIENTO = P3017_A)
                                                                                                               
 View(BaseFinal)
 # Análisis y modelo
@@ -41,14 +42,26 @@ summary(BaseFinal)
 Modelo <- lm(
   VENTAS_MES_ANTERIOR ~ GASTOS_MES +
     VALOR_AGREGADO + INV_ACTIVOS
-  + factor(REGION)+ P3017_A,
+  + factor(REGION)+ ARRENDAMIENTO,
   data = BaseFinal
 )
 summary(Modelo)
 
 # Gráficos exploratorios
-ggplot(BaseFinal, aes(x = VENTAS_MES_ANTERIOR, y = GASTOS_MES)) + geom_point()
+ggplot(BaseFinal, aes(x = GASTOS_MES, y = VENTAS_MES_ANTERIOR)) +
+  geom_point() +
+  labs(title = "Relación entre Gastos Mensuales y Ventas",
+       x = "Gastos Mensuales", y = "Ventas Mes Anterior")
 ggplot(BaseFinal, aes(x = INV_ACTIVOS, y = VENTAS_MES_ANTERIOR)) + geom_point()
+names(BaseFinal)
+
+
+#Correlación entre variables cuantitativas
+cor(BaseFinal$VENTAS_MES_ANTERIOR, BaseFinal$GASTOS_MES)
+cor(BaseFinal$VENTAS_MES_ANTERIOR, BaseFinal$VALOR_AGREGADO)
+cor(BaseFinal$VENTAS_MES_ANTERIOR, BaseFinal$ARRENDAMIENTO)
+cor(BaseFinal$VENTAS_MES_ANTERIOR, BaseFinal$INV_ACTIVOS)
+
 
 plot(Modelo, 1)
 
