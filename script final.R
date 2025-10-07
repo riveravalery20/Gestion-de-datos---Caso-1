@@ -11,28 +11,28 @@ BaseFinal <- costos %>%
   inner_join(ventas, by = c("DIRECTORIO", "SECUENCIA_P",
                             "SECUENCIA_ENCUESTA", "CLASE_TE", "COD_DEPTO", "AREA")) %>%
   mutate(
-    AREA = str_squish(as.character(AREA)), #cambiamos AREA para volver en variable categorica
+    AREA = str_squish(as.character(AREA)), 
+    COD_DEPTO = str_squish(as.character(COD_DEPTO)), # Asegura que COD_DEPTO esté como carácter
+    
     REGION = case_when(
-      AREA %in% c("08","13","20","44","47","70","23") ~ "Caribe",
-      AREA %in% c("05","11","15","17","25","68","73","76") ~ "Andina",
-      AREA %in% c("27","52","19") ~ "Pacifica",
-      AREA %in% c("85","81","50","99") ~ "Orinoquia",
-      AREA %in% c("91","97","95","98","86") ~ "Amazonia",
-      AREA %in% c("88") ~ "Insular",
+      COD_DEPTO %in% c("08","13","20","44","47","70","23") ~ "Caribe",
+      COD_DEPTO %in% c("05","11","15","17","18","25","41","54","63","66","68","73","76") ~ "Andina",
+      COD_DEPTO %in% c("19","27","52") ~ "Pacifica",
+      COD_DEPTO %in% c("50","81","85","97","99") ~ "Orinoquia-Amazonia",
+      COD_DEPTO %in% c("91","95","98") ~ "Amazonia",
+      COD_DEPTO %in% c("88") ~ "Insular",
       TRUE ~ "No hay registro"
     ),
     REGION = as.factor(REGION),
-    # Inversión en activos (suma de activos fijos) sumamos  (P3017_B a P3017_G) los cuales agrupan los gastos operativos básicos de un negocio
-    INV_ACTIVOS = rowSums(select(., starts_with("P3017_")), na.rm = TRUE),
-    
+    INV_ACTIVOS = rowSums(select(., starts_with("P3017_")), na.rm = TRUE)
   ) %>% 
-  select(VENTAS_MES_ANTERIOR, GASTOS_MES, CONSUMO_INTERMEDIO,
+  select(VENTAS_MES_ANTERIOR, GASTOS_MES, P3017_A,
          VALOR_AGREGADO, INV_ACTIVOS, REGION, COD_DEPTO) %>% 
   mutate(VENTAS_MES_ANTERIOR=as.numeric(VENTAS_MES_ANTERIOR),
-         GASTOS_MES=as.numeric(GASTOS_MES), CONSUMO_INTERMEDIO= as.numeric(CONSUMO_INTERMEDIO),
-         VALOR_AGREGADO=as.numeric(VALOR_AGREGADO), INV_ACTIVOS=as.numeric(INV_ACTIVOS))%>%
-  filter(VENTAS_MES_ANTERIOR>0,VALOR_AGREGADO>0, INV_ACTIVOS>0, GASTOS_MES>0)
-                                                                                                              )))
+         GASTOS_MES=as.numeric(GASTOS_MES), P3017_A=as.numeric(P3017_A),
+         VALOR_AGREGADO=as.numeric(VALOR_AGREGADO), INV_ACTIVOS=as.numeric(INV_ACTIVOS)) %>%
+  filter(VENTAS_MES_ANTERIOR>0,VALOR_AGREGADO>0, INV_ACTIVOS>0, GASTOS_MES>0, P3017_A>0)
+                                                                                                              
 View(BaseFinal)
 # Análisis y modelo
 summary(BaseFinal$INV_ACTIVOS)
@@ -41,7 +41,7 @@ summary(BaseFinal)
 Modelo <- lm(
   VENTAS_MES_ANTERIOR ~ GASTOS_MES +
     VALOR_AGREGADO + INV_ACTIVOS
-  + factor(REGION),
+  + factor(REGION)+ P3017_A,
   data = BaseFinal
 )
 summary(Modelo)
