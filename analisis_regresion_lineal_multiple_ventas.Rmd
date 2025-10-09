@@ -1,0 +1,303 @@
+---
+title: "Análisis de Regresión Lineal Múltiple sobre Ventas Empresariales"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    number_sections: true
+    code_folding: hide
+    code_download: true
+    theme: null
+    df_print: paged
+---
+
+<style>
+:root {
+  --accent: #6c5ce7;
+  --accent-hover: #5848d6;
+  --bg: #f7f8fc;
+  --toc-active: #e0e0ff; /* Claude-like soft purple */
+  --text: #1f1f1f;
+  --muted: #666666;
+  --card-bg: #ffffff;
+  --shadow: 0 8px 24px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: Georgia, 'Times New Roman', serif; /* Serif formal para el cuerpo */
+  line-height: 1.8;
+}
+
+p { text-align: justify; }
+
+/* Contenedor principal con Flexbox y TOC a la derecha */
+.main-container {
+  max-width: 1320px;
+  margin: 24px auto;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: row-reverse; /* TOC a la derecha, contenido a la izquierda */
+  align-items: flex-start;
+  gap: 28px;
+}
+
+/* El contenido debe usar todo el ancho disponible */
+.toc-content {
+  margin-left: 0 !important; /* anula margen de Bootstrap */
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Sidebar de TOC estilizado y fijo */
+.tocify-wrapper, #TOC {
+  width: 300px;
+  position: sticky;
+  top: 24px;
+  align-self: flex-start;
+  background: var(--card-bg);
+  border: 1px solid #eeeeee;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 16px 16px 16px 16px;
+  font-family: 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif; /* Sans para TOC */
+}
+
+/* Título personalizado del TOC */
+.tocify-wrapper #TOC::before, #TOC::before {
+  content: "📋 Índice de Contenidos";
+  display: block;
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin: 4px 0 12px;
+  color: var(--accent);
+  letter-spacing: 0.2px;
+}
+
+/* Enlaces del TOC */
+.tocify, .tocify ul, .tocify li { list-style: none; }
+.tocify a, #TOC a {
+  display: block;
+  padding: 6px 8px;
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* Estado activo del TOC */
+.tocify .tocify-focus > a,
+.tocify .active > a,
+.tocify .list-group-item.active,
+#TOC .active {
+  background: var(--toc-active) !important;
+  border-radius: 8px;
+}
+
+/* Encabezados y enlaces con acento ejecutivo */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--accent);
+  font-family: Georgia, 'Times New Roman', serif;
+  letter-spacing: 0.2px;
+}
+
+a, a:visited { color: var(--accent); }
+a:hover, a:focus { color: var(--accent-hover); }
+
+/* Tarjetas para secciones de contenido */
+.toc-content .section {
+  background: var(--card-bg);
+  border: 1px solid #eeeeee;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin: 16px 0 28px 0;
+}
+
+/* Mesas y figuras */
+.table, table, .kable-table, .dataTable {
+  background: var(--card-bg);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+pre, code { font-size: 0.95rem; }
+pre {
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+}
+
+/* Tipografía sans para gráficos */
+.plotly, .ggplot {
+  font-family: 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Responsive: TOC debajo en pantallas pequeñas */
+@media (max-width: 992px) {
+  .main-container { flex-direction: column; }
+  .tocify-wrapper, #TOC { position: relative; width: 100%; }
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 8,
+  fig.height = 5
+)
+
+suppressPackageStartupMessages({
+  library(ggplot2)
+  library(dplyr)
+  library(plotly)
+  library(DT)
+  library(knitr)
+  library(kableExtra)
+  library(paletteer)
+})
+
+# Tipografía sans-serif para gráficos
+theme_set(theme_minimal(base_family = "Segoe UI"))
+
+set.seed(123)
+```
+
+# Introducción
+
+Este informe presenta un análisis de **Regresión Lineal Múltiple** orientado a estimar y explicar el desempeño de las ventas empresariales a partir de variables explicativas clave. Se prioriza una estética ejecutiva moderna, con interactividad y un diseño en dos columnas donde el índice de contenidos se sitúa a la derecha.
+
+## Objetivos
+
+- Estimar un modelo de regresión lineal múltiple para ventas.
+- Evaluar la significancia de los coeficientes y el ajuste global.
+- Revisar supuestos del modelo mediante diagnósticos gráficos.
+- Proveer visualizaciones y tablas interactivas para exploración ejecutiva.
+
+# Datos y preparación
+
+A efectos demostrativos se genera un conjunto de datos sintético con estructura empresarial (marketing, precio y competencia). Sustituya esta sección por la ingesta de sus datos reales cuando corresponda.
+
+```{r datos}
+# Datos sintéticos de ejemplo (reemplace con sus datos reales)
+n <- 150
+ventas_df <- tibble::tibble(
+  marketing   = rnorm(n, mean = 50, sd = 10),
+  precio      = rnorm(n, mean = 20, sd = 5),
+  competencia = rnorm(n, mean = 80, sd = 15)
+) %>%
+  mutate(
+    # Relaciones lineales con algo de ruido
+    ventas = 200 + 5 * marketing - 3 * precio + 2 * competencia + rnorm(n, 0, 12)
+  )
+
+# Vista general
+DT::datatable(ventas_df, options = list(pageLength = 10, scrollX = TRUE))
+```
+
+## Estadísticos descriptivos
+
+```{r descriptivos}
+resumen <- ventas_df %>%
+  summarize(
+    across(everything(), list(media = mean, sd = sd, min = min, max = max), .names = "{.col}_{.fn}")
+  ) %>%
+  tidyr::pivot_longer(everything(), names_to = c("variable", "estadistico"), names_sep = "_", values_to = "valor") %>%
+  tidyr::pivot_wider(names_from = estadistico, values_from = valor)
+
+knitr::kable(resumen, caption = "Resumen estadístico de variables") %>%
+  kableExtra::kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover"))
+```
+
+# Exploración visual
+
+```{r exploracion}
+# Dispersión de ventas vs marketing coloreada por nivel de competencia
+p_scatter <- ggplot(ventas_df, aes(x = marketing, y = ventas, color = competencia)) +
+  geom_point(alpha = 0.75, size = 2) +
+  scale_color_gradient(low = "#c4b5fd", high = "#6c5ce7") +
+  labs(
+    title = "Relación entre Marketing y Ventas",
+    subtitle = "Color indica la intensidad competitiva",
+    x = "Inversión en marketing",
+    y = "Ventas"
+  ) +
+  theme(plot.title = element_text(face = "bold", color = "#6c5ce7"))
+
+plotly::ggplotly(p_scatter)
+```
+
+```{r correlaciones}
+# Matriz de correlaciones
+corr <- round(cor(ventas_df), 3)
+knitr::kable(corr, caption = "Matriz de correlaciones") %>%
+  kableExtra::kable_styling(full_width = FALSE, bootstrap_options = c("striped", "condensed"))
+```
+
+# Modelo de regresión lineal múltiple
+
+```{r modelo}
+modelo_rlm <- lm(ventas ~ marketing + precio + competencia, data = ventas_df)
+
+# Resumen del modelo
+summary(modelo_rlm)
+```
+
+```{r coeficientes}
+# Tabla de coeficientes con intervalos de confianza
+coef_tbl <- broom::tidy(modelo_rlm, conf.int = TRUE)
+knitr::kable(coef_tbl, digits = 3, caption = "Coeficientes del modelo con IC") %>%
+  kableExtra::kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover"))
+```
+
+## Predicción y ajuste
+
+```{r prediccion}
+ventas_df <- ventas_df %>%
+  mutate(
+    ajustado = predict(modelo_rlm, newdata = ventas_df),
+    residuo  = resid(modelo_rlm)
+  )
+
+p_ajuste <- ggplot(ventas_df, aes(x = ajustado, y = ventas)) +
+  geom_point(color = "#6c5ce7", alpha = 0.75) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "#999999") +
+  labs(title = "Ventas observadas vs. estimadas", x = "Estimadas", y = "Observadas") +
+  theme(plot.title = element_text(face = "bold", color = "#6c5ce7"))
+
+plotly::ggplotly(p_ajuste)
+```
+
+# Diagnóstico del modelo
+
+```{r diagnostico}
+# Residuos vs ajustados
+p_rvf <- ggplot(ventas_df, aes(x = ajustado, y = residuo)) +
+  geom_hline(yintercept = 0, color = "#999999", linetype = "dashed") +
+  geom_point(color = "#6c5ce7", alpha = 0.75) +
+  labs(title = "Residuos vs Ajustados", x = "Ajustados", y = "Residuos") +
+  theme(plot.title = element_text(face = "bold", color = "#6c5ce7"))
+
+# QQ-plot de residuos
+qq_df <- data.frame(sample = scale(ventas_df$residuo))
+p_qq <- ggplot(qq_df, aes(sample = sample)) +
+  stat_qq(color = "#6c5ce7", alpha = 0.8) +
+  stat_qq_line(color = "#999999", linetype = "dashed") +
+  labs(title = "QQ-plot de residuos estandarizados") +
+  theme(plot.title = element_text(face = "bold", color = "#6c5ce7"))
+
+subplot(plotly::ggplotly(p_rvf), plotly::ggplotly(p_qq), nrows = 1, margin = 0.08)
+```
+
+# Conclusiones y próximos pasos
+
+- El modelo estimado ilustra cómo integrar variables de marketing, precio y competencia para explicar variaciones en ventas.
+- Profundice con validaciones cruzadas, selección de variables o regularización (p. ej., LASSO/Ridge) según sus requisitos.
+- Reemplace el dataset de ejemplo por sus datos y actualice la narrativa conforme a sus hallazgos.
